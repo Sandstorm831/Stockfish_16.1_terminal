@@ -1,10 +1,10 @@
 # Stockfish 16.1 Terminal
 So this is a Next.js project prepared for WebAssembly port of [Stockfish](https://github.com/official-stockfish/Stockfish) with the latest version of 16.1. You can find the original project [here](https://github.com/nmrugg/stockfish.js).
 
-[![LiveDemo](/public/images/LiveDemo.png)](https://stockfish161-terminal.vercel.app/)
+[![LiveDemo](/images/LiveDemo.png)](https://stockfish161-terminal.vercel.app/)
 
 ---
-![Image1](./public/images/Post_68.png)
+![Image1](./images/Post_68.png)
 ### Setting up the project
 Run the following bash commands in the choice of your directory
 ```
