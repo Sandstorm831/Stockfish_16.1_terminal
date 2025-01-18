@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Stockfish 16.1 Terminal
+So this is a Next.js project prepared for WebAssembly port of [Stockfish](https://github.com/official-stockfish/Stockfish) with the latest version of 16.1. You can find the original project [here](https://github.com/nmrugg/stockfish.js).
 
-## Getting Started
+[![LiveDemo](/public/images/LiveDemo.png)](https://stockfish161-terminal.vercel.app/)
 
-First, run the development server:
+---
+![Image1](./public/images/Post_68.png)
+### Setting up the project
+Run the following bash commands in the choice of your directory
+```
+// clone the repository
+git clone https://github.com/Sandstorm831/Stockfish_16.1_terminal.git
 
-```bash
+// enter the project
+cd Stockfish_16.1_terminal/
+
+// install the packages
+npm install
+
+// run the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Project structure
+```
+Stockfish_16.1_terminal
+ ┣ .next
+ ┣ app
+ ┃   ┣ favicon.ico
+ ┃   ┣ globals.css
+ ┃   ┣ layout.tsx
+ ┃   ┗ page.tsx                                 # Implementation of the root page and 
+ ┃                                                initialization of the engine
+ ┣ public
+ ┃   ┣ lib                                      # folder containing the stockfish WebAssembly
+ ┃   ┃ ┃                                          and glue code
+ ┃   ┃ ┣ stockfish-16.1.js                      # Glue code for interacting with .WASM file
+ ┃   ┃ ┗ stockfish-16.1.wasm                    # Stockfish WebAssembly
+ ┃   ┃
+ ┃   ┣ file.svg
+ ┃   ┣ globe.svg
+ ┃   ┣ next.svg
+ ┃   ┣ vercel.svg
+ ┃   ┗ window.svg
+ ┃
+ ┣ .gitignore
+ ┣ README.md
+ ┣ eslint.config.mjs
+ ┣ next-env.d.ts
+ ┣ next.config.ts                               # Essential headers allowance for working
+ ┃                                                with Web-Workers
+ ┣ package-lock.json
+ ┣ package.json
+ ┣ postcss.config.mjs
+ ┣ tailwind.config.ts
+ ┗ tsconfig.json
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Header allowances
+The engine will run in browsers with proper CORS headers applied. The following HTTP headers are required on top level response
+```
+Cross-Origin-Embedder-Policy: require-corp
+Cross-Origin-Opener-Policy: same-origin
+```
+and following on included files
+```
+Cross-Origin-Embedder-Policy: require-corp
+```
+If top level headers are not configured properly, the `wasmThreadsSupported()` function as defined below will return `false`. If headers on included files are not configured correctly, something like `pthread sent an error! undefined:undefined: undefined` maybe logged to the console. You can read more about these headers [here](https://web.dev/articles/cross-origin-isolation-guide)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### WebAssembly Threads Support
+```
+function wasmThreadsSupported() {
+  // WebAssembly 1.0
+  const source = Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00);
+  if (
+    typeof WebAssembly !== "object" ||
+    typeof WebAssembly.validate !== "function"
+  )
+    return false;
+  if (!WebAssembly.validate(source)) return false;
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+  // SharedArrayBuffer
+  if (typeof SharedArrayBuffer !== "function") return false;
 
-## Learn More
+  // Atomics
+  if (typeof Atomics !== "object") return false;
 
-To learn more about Next.js, take a look at the following resources:
+  // Shared memory
+  const mem = new WebAssembly.Memory({ shared: true, initial: 8, maximum: 16 });
+  if (!(mem.buffer instanceof SharedArrayBuffer)) return false;
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+  // Structured cloning
+  try {
+    // You have to make sure nobody cares about these messages!
+    window.postMessage(mem, "*");
+  } catch (e) {
+    return false;
+  }
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+  // Growable shared memory (optional)
+  try {
+    mem.grow(8);
+  } catch (e) {
+    return false;
+  }
 
-## Deploy on Vercel
+  return true;
+}
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### License
+[Stockfish team](https://github.com/official-stockfish/Stockfish) released the engine under GPL3 license
